@@ -1,18 +1,19 @@
 module Manifolds
 
-using ForwardDiff: derivative
 using StaticArrays
 using RecipesBase
+using HyperDualNumbers
 
-# package code goes here
 include("transformations.jl")
 include("curves.jl")
-
+include("plotting.jl")
 
 export
+    # Transformations:
+    change_basis, translate, scale, rotate_x, rotate_y, rotate_z,
     # Frame:
-    tangent, normal, binormal, frenetframe!, frenetframe,
-    # Types:
-    Circle, Trefoil
+    frenetframe!, frenetframe,
+    # Curves:
+    circle, trefoil
 
-end # module
+end

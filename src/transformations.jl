@@ -1,14 +1,15 @@
-# TODO: Remove scale, rename to RigidRigidTransform
+# TODO: Remove most of this.
 
-struct RigidTransform{D, T<:Real}
+struct RigidTransformation{D, T}
     basis::SMatrix{D, D, T}
-    translate::SVector{D, T}
+    point::SVector{D, T}
 end
 
-RigidTransform() = RigidTransform{1, Float64}(SMatrix{1,1,Float64}(1.0),
-                                              SVector{1,Float64}(0.0))
+RigidTransformation() =
+    RigidTransformation{1, Float64}(SMatrix{1,1,Float64}(1.0),
+                                    SVector{1,Float64}(0.0))
 
-function RigidTransform(m::AbstractMatrix, v::AbstractVector)
+function RigidTransformation(m::AbstractMatrix, v::AbstractVector)
     # TODO: remove checks?
     size(m, 1) ≠ size(m, 2) &&
         throw(DimensionMismatch("`m` must be a square matrix!"))
@@ -20,11 +21,14 @@ function RigidTransform(m::AbstractMatrix, v::AbstractVector)
 
     T = promote_type(eltype(m), eltype(v))
     D = size(m, 1)
-    RigidTransform{D, T}(SMatrix{D, D, T}(m),
+    RigidTransformation{D, T}(SMatrix{D, D, T}(m),
                          SVector{D, T}(v))
 end
 
-function (t::RigidTransform{D})(arr::AbstractArray, translate=true) where D
+basis(rt::RigidTransformation) = rt.basis
+point(rt::RigidTransformation) = rt.point
+
+function (t::RigidTransformation{D})(arr::AbstractArray, translate=true) where D
     # TODO: remove checks?
     size(arr, 2) ≠ 1 && size(arr, 1) ≠ size(arr, 2) &&
         throw(DimensionMismatch("`arr` must be a square matrix or vector!"))
@@ -35,51 +39,64 @@ function (t::RigidTransform{D})(arr::AbstractArray, translate=true) where D
     a = idpad(arr, dim)
 
     if translate
-        v = idpad(t.translate, dim)
+        v = idpad(t.point, dim)
         m * a .+ v
     else
         m * a
     end
 end
 
-function compose(t1::RigidTransform{D1, T1},
-                 t2::RigidTransform{D2, T2}) where {D1, D2, T1, T2}
+function (t1::RigidTransformation{D1, T1})(
+    t2::RigidTransformation{D2, T2}) where {D1, D2, T1, T2}
 
     T = promote_type(T1, T2)
     D = max(D1, D2)
     m1 = idpad(t1.basis, D)
-    v1 = idpad(t1.translate, D)
+    v1 = idpad(t1.point, D)
     m2 = idpad(t2.basis, D)
-    v2 = idpad(t2.translate, D)
+    v2 = idpad(t2.point, D)
 
-    RigidTransform{D, T}(m1 * m2, v1 + v2)
+    RigidTransformation{D, T}(m1 * m2, m1 * v2 + v1)
 end
 
-Base.:∘(t1::RigidTransform, t2::RigidTransform) = compose(t1, t2)
+function compose(t1::RigidTransformation{D1, T1},
+                 t2::RigidTransformation{D2, T2}) where {D1, D2, T1, T2}
 
-function Base.inv(t::RigidTransform{D, T}) where {D, T}
-    RigidTransform{D, T}(t.basis', -t.translate)
-end
-
-function Base.:(==)(t1::RigidTransform{D1},
-                    t2::RigidTransform{D2}) where {D1, D2}
+    T = promote_type(T1, T2)
     D = max(D1, D2)
     m1 = idpad(t1.basis, D)
-    v1 = idpad(t1.translate, D)
+    v1 = idpad(t1.point, D)
     m2 = idpad(t2.basis, D)
-    v2 = idpad(t2.translate, D)
+    v2 = idpad(t2.point, D)
+
+    RigidTransformation{D, T}(m1 * m2, v1 + v2)
+end
+
+Base.:∘(t1::RigidTransformation, t2::RigidTransformation) = compose(t1, t2)
+
+function Base.inv(t::RigidTransformation{D, T}) where {D, T}
+    RigidTransformation{D, T}(t.basis', -t.point)
+end
+
+function Base.:(==)(t1::RigidTransformation{D1},
+                    t2::RigidTransformation{D2}) where {D1, D2}
+    D = max(D1, D2)
+    m1 = idpad(t1.basis, D)
+    v1 = idpad(t1.point, D)
+    m2 = idpad(t2.basis, D)
+    v2 = idpad(t2.point, D)
 
     m1 == m2 && v1 == v2
 end
 
-function Base.isapprox(t1::RigidTransform{D1},
-                       t2::RigidTransform{D2};
+function Base.isapprox(t1::RigidTransformation{D1},
+                       t2::RigidTransformation{D2};
                        kwargs...) where {D1, D2}
     D = max(D1, D2)
     m1 = idpad(t1.basis, D)
-    v1 = idpad(t1.translate, D)
+    v1 = idpad(t1.point, D)
     m2 = idpad(t2.basis, D)
-    v2 = idpad(t2.translate, D)
+    v2 = idpad(t2.point, D)
 
     isapprox(m1, m2; kwargs...) && isapprox(v1, v2; kwargs...)
 end
@@ -128,14 +145,14 @@ function change_basis(b::AbstractMatrix{T}) where T
     size(b, 1) ≠ size(b, 2) &&
         throw(DimensionMismatch("`basis` must be a square matrix!"))
 
-    RigidTransform(b, zeros(SVector{size(b, 1), T}))
+    RigidTransformation(b, zeros(SVector{size(b, 1), T}))
 end
 
 function translate(v::AbstractVector{T}) where T
-    RigidTransform(eye(SMatrix{length(v), length(v), T}), v)
+    RigidTransformation(eye(SMatrix{length(v), length(v), T}), v)
 end
 
-id(d::Int, T::Type=Int) = RigidTransform{d, T}(eye(SMatrix{d,d,T}),
+id(d::Int, T::Type=Int) = RigidTransformation{d, T}(eye(SMatrix{d,d,T}),
                                                zeros(SVector{d,T}))
 
 rotate_x(θ::T) where T =
@@ -149,5 +166,16 @@ rotate_y(θ::T) where T =
 rotate_z(θ::T) where T =
     change_basis(SMatrix{2,2,T}([cos(θ) -sin(θ);
                                  sin(θ)  cos(θ)]))
+
+# Move dimensions by one up.
+function lift(t::RigidTransformation{D, T}, n=1) where {D, T}
+    if n < 1
+        t
+    else
+        # TODO: rotate around
+        t ∘ change_basis([zeros(T, n, D) I;
+                          I zeros(T, D, n)])
+    end
+end
 
 #TODO more rotations/general rotation?

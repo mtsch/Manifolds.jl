@@ -16,14 +16,15 @@ ParametricCurve(f::F, d::Int=1, α::T=1) where {F<:Function, T<:Real} =
 
 function frenetframe(pc::ParametricCurve, t::T) where T #TODO NE T
     τ = hyper(t, 1.0, 1.0, 0.0)
-    val = idpad(pc.fun(τ) * pc.scale, 3)
+    pt = pc.fun(τ) * pc.scale
+    pt3 = idpad(pt, 3)
 
-    n = normalize(eps1.(val))
-    b = eps1eps2.(val)
+    n = normalize(eps1.(pt3))
+    b = eps1eps2.(pt3)
     t = normalize(n × b)
     b = -(n × t)
 
-    pc.trans(SMatrix{3, 3, T}([n b t]), false), pc.trans(real.(val))
+    pc.trans(SMatrix{3, 3, T}([n b t]), false), pc.trans(real.(pt))
 end
 
 function lift(t::RigidTransform{D}, n=1) where D
@@ -64,7 +65,8 @@ function (pm::ParametricManifold{N})(args::Vararg{T, N}) where {T, N}
         trans = lift(RigidTransform(fm, pt), i)
     end
 
-    pt
+    # Cut off excess dimensions.
+    pt[1:(curves[end].dim + N-1)]
 end
 
 function Base.cross(args::Vararg{ParametricCurve, N}) where N
@@ -95,11 +97,27 @@ if false
     plt
 
 
-    torus = cross(trefoil(3.0), circle(1.0))
-    mat = zeros(3, 1000)
-    for i in 1:1000
-        mat[:, i] .= torus(rand(), rand(), rand())[2:4]
+    @time begin
+        torus = cross(trefoil(3.0), circle(1.0))
+        mat = zeros(3, 10000)
+        for i in 1:10000
+            mat[:, i] .= torus(rand(), rand())
+        end
     end
     scatter(mat[1,:], mat[2,:], mat[3,:], markersize=0.5)
+
+    # TODO to recipe
+    torus = cross(trefoil(3.0), circle(1.0))
+    xs = zeros(100, 100)
+    ys = zeros(100, 100)
+    zs = zeros(100, 100)
+    for (i, θ) in enumerate(linspace(0,1,100)),
+        (j, φ) in enumerate(linspace(0,1,100))
+        x,y,z = torus(θ, φ)
+        xs[i, j] = x
+        ys[i, j] = y
+        zs[i, j] = z
+    end
+    surface(xs', ys', zs')
 
 end

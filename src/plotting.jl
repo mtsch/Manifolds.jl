@@ -61,6 +61,7 @@ end
         @series begin
             color := col
             label := coord
+            linewidth --> 2
             [p[1], B[1, i]], [p[2], B[2, i]], [p[3], B[3, i]]
         end
     end

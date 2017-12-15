@@ -65,27 +65,6 @@ function (pc::ParametricCurve)(t, s = 0)
     pc.fun(t1) .* pc.scale(s1)
 end
 
-#=
-# TODO: specialize for ParametricCurve{2}?
-function frame(pc::ParametricCurve, t::T, ψ=0) where T
-    τ = hyper(t, one(T), one(T), zero(T))
-    #pt = pc.fun(τ) .* pc.scale
-    pt  = pc(τ, ψ)
-    pt3 = idpad(pt, 3)
-
-    n = normalize(eps1.(pt3))
-    b = eps1eps2.(pt3)
-    t = normalize(n × b)
-    b = -(n × t)
-
-    RigidTransformation(SMatrix{3,3}([n b t]), real.(pt3))
-end
-
-function frame(pc::ParametricCurve{1}, t::T, α=0) where T
-    RigidTransformation(eye(SMatrix{3,3,T}), @SVector([pc(t, α)[1],0,0]))
-end
-=#
-
 # ============================================================================ #
 struct ParametricSurface{E} <: Manifold{2, E}
     fun::Function
@@ -110,25 +89,6 @@ struct ProductSpace{D, E, N} <: Manifold{D, E}
     spaces::NTuple{N, Manifold}
 end
 
-#=
-function gettrans(ps::ProductSpace{D, E, N},
-                  args::Vararg{T, D}) where {T, D, E, N}
-    spaces = ps.spaces
-
-    argoffset = 0
-    trans = id(1, T)
-    α = zero(T)
-    for i in 1:N-1
-        d = dim(spaces[i])
-        trans = lift(trans(frame(spaces[i], args[argoffset + (1:d)]..., α)), d)
-
-        α = args[argoffset + 1]
-        argoffset += d
-    end
-    trans, argoffset, α
-end
-=#
-
 (ps::ProductSpace{D})(args::Vararg{Any, D}) where D =
     ps(promote(args...)...)
 function (ps::ProductSpace{D, E, N})(args::Vararg{T, D}) where {T, D, E, N}
@@ -148,15 +108,6 @@ function (ps::ProductSpace{D, E, N})(args::Vararg{T, D}) where {T, D, E, N}
 
     trans(ps.spaces[end](args[argoffset+1:end]..., t))[1:E]
 end
-
-#=
-frame(ps::ProductSpace{D}, args::Vararg{Any, D}) where D =
-    frame(ps, promote(args...)...)
-function frame(ps::ProductSpace{D, E, N}, args::Vararg{T, D}) where {T, D, E, N}
-    trans, argoffset, α = gettrans(ps, args...)
-    trans(frame(ps.spaces[end], args[argoffset+1:end]..., α))
-end
-=#
 
 function Base.:*(m1::Manifold{D1, E1},
                  m2::Manifold{D2, E2}) where {D1, D2, E1, E2}
@@ -178,9 +129,7 @@ function Base.:*(ps1::ProductSpace{D1, E1, N1},
     ProductSpace{D1+D2, max(E1, D1+E2), N1+N2}((ps1.spaces..., ps1.spaces...))
 end
 
-
 # ============================================================================ #
-# == EXAMPLES == #
 interval(α=1.0) =
     ParametricCurve(1, t -> SVector(t), α)
 
@@ -192,7 +141,7 @@ knot(p=2, q=3, n=1, m=1.5, h=1, α=1) =
                                       m*sin(2π*p*t) + n*sin((2-q)*2π*t),
                                       h * sin(q*2π*t)]), α)
 
-torus2(R, r, α=1.0) =
+torus(R, r, α=1.0) =
     ParametricSurface(3, (θ, φ) -> @SVector([(R + r*cos(2π*θ))*cos(2π*φ),
                                              (R + r*cos(2π*θ))*sin(2π*φ),
                                              r*sin(2π*θ)]), α)
@@ -208,22 +157,3 @@ kleinbottle(R, P, ϵ=0, α=1.0) =
                                 R*(sin(π*θ)*cos(2π*φ) - cos(π*θ)*sin(4π*φ)),
                                 P*cos(2π*θ) * (1 + ϵ*sin(2π*φ)),
                                 P*sin(2π*θ) * (1 + ϵ*sin(2π*φ))]), α)
-
-
-# == GARBAGE == #
-if false
-
-    #torus = trefoil() * circle(.2)
-    surf = torus2(3.,1.)#circle(3.) * circle()#torus2(1.,.1)#torus2(1., .1)
-    plt = plot(surf, alpha=0.5)
-    for i in 0:4
-        #θ, φ = rand(2)#0., 1.
-        θ = 0
-        φ = i / 4
-        p = surf(θ, φ)
-        plot!(plt, frame(surf, θ, φ))
-        @show basis(frame(surf, θ, φ))
-    end
-    plt
-
-end

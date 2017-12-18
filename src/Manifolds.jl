@@ -8,6 +8,9 @@ include("transformations.jl")
 include("manifolds.jl")
 include("plotting.jl")
 
+const Circle = NSphere{1}
+const Sphere = NSphere{2}
+
 export
     # Transformations:
     basis, point, change_basis, translate, rotate_x, rotate_y, rotate_z,

@@ -1,8 +1,8 @@
 # Curve
-@recipe function f(c::Manifold{1, E}, from=0, to=1; npoints=1000) where E
+@recipe function f(c::Manifold{1, C}, from=0, to=1; npoints=1000) where C
     pts = c.(linspace(from, to, npoints))
 
-    if E < 3
+    if C ≤ 2
         pts = map(p -> idpad(p, 3), pts)
     end
 
@@ -14,11 +14,17 @@
 end
 
 # Surface
-@recipe function f(s::Manifold{2, E}, from=[0,0], to=[1,1];
-                   npoints = 100, project_to = eye(3)) where E
+@recipe function f(s::Manifold{2, C}, from=[0,0], to=[1,1];
+                   npoints = 100, project_to = eye(3)) where C
+    @assert size(project_to, 2) == 3
 
     # projection matrix
-    X = PaddedView(0, project_to, (E, 3))
+    Δ = C+2-size(project_to, 1)
+    if Δ > 0
+        X = [project_to; zeros(Δ, 3)]
+    else
+        X = project_to
+    end
 
     xs = zeros(npoints, npoints)
     ys = zeros(npoints, npoints)

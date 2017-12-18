@@ -2,12 +2,12 @@ idpad = Manifolds.idpad
 
 @testset "ParametricCurves" begin
     @testset "sanity checks" begin
-        @test dim(interval()) == 1
-        @test ambientdim(interval()) == 1
-        @test dim(circle()) == 1
-        @test ambientdim(circle()) == 2
-        @test dim(knot()) == 1
-        @test ambientdim(knot()) == 3
+        @test dim(Interval()) == 1
+        @test ambientdim(Interval()) == 1
+        @test dim(Circle()) == 1
+        @test ambientdim(Circle()) == 2
+        @test dim(Knot()) == 1
+        @test ambientdim(Knot()) == 3
     end
 
     curves = [interval(), circle(), knot()]

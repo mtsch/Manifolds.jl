@@ -14,14 +14,18 @@
 end
 
 # Surface
-@recipe function f(s::Manifold{2}, from=[0,0], to=[1,1]; npoints = 100)
+@recipe function f(s::Manifold{2, E}, from=[0,0], to=[1,1];
+                   npoints = 100, project_to = eye(3)) where E
+
+    # projection matrix
+    X = PaddedView(0, project_to, (E, 3))
 
     xs = zeros(npoints, npoints)
     ys = zeros(npoints, npoints)
     zs = zeros(npoints, npoints)
     for (i, θ) in enumerate(linspace(from[1], to[1], npoints)),
         (j, φ) in enumerate(linspace(from[2], to[2], npoints))
-        x, y, z = idpad(s(θ, φ), 3)[1:3]
+        x, y, z = (X'idpad(s(θ, φ), 3))[1:3]
         xs[i, j] = x
         ys[i, j] = y
         zs[i, j] = z

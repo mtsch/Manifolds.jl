@@ -1,24 +1,26 @@
 # ============================================================================ #
 abstract type Manifold{D, E} end
+# TODO: change E to codimension for spheres.
+# TODO: make spheres, knots etc into types.
 
 dim(::Manifold{D}) where D = D
 ambientdim(::Manifold{D, E}) where {D, E} = E
 
 # TODO: specialize for Manifold{1, 2}?
 function frame(pc::Manifold{1}, t::T, tα=nothing) where T
-    τ = hyper(t, one(T), one(T), zero(T))
+    τ = Dual{:d1}(Dual{:d2}(t, one(T)), one(T))
     if tα == nothing
         pt = idpad(pc(τ), 3)
     else
         pt = idpad(pc(τ, tα), 3)
     end
 
-    n = normalize(eps1.(pt))
-    b = eps1eps2.(pt)
+    n = normalize(value.(partials.(pt, 1)))
+    b = partials.(partials.(pt, 1), 1)
     t = normalize(n × b)
     b = -(n × t)
 
-    RigidTransformation(SMatrix{3,3}([n b t]), real.(pt))
+    RigidTransformation(SMatrix{3,3}([n b t]), value.(value.(pt)))
 end
 
 function frame(pc::Manifold{1, 1}, t::T, tα=nothing) where T
@@ -85,6 +87,8 @@ function (ps::ParametricSurface)(θ, φ, s = 0)
 end
 
 # ============================================================================ #
+# TODO: cartesian products (ala clifford torus)
+#
 struct ProductSpace{D, E, N} <: Manifold{D, E}
     spaces::NTuple{N, Manifold}
 end

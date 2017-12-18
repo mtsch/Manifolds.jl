@@ -2,8 +2,7 @@ module Manifolds
 
 using StaticArrays
 using RecipesBase
-using HyperDualNumbers
-using ForwardDiff: jacobian
+using ForwardDiff: jacobian, Dual, partials, value
 
 include("transformations.jl")
 include("manifolds.jl")
@@ -20,4 +19,5 @@ export
     interval, circle, knot,
     torus, sphere, kleinbottle
 
+    # TODO: replace most uses of idpad with PaddedViews.
 end

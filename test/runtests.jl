@@ -1,6 +1,6 @@
 using Manifolds
 using Base.Test
 
-n_runs = 2
+nruns = 10
 include("transformations.jl")
 include("manifolds.jl")

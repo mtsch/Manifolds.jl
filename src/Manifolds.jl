@@ -17,10 +17,8 @@ export
     # Frame:
     frame,
     # General:
-    dim, ambientdim,
-    # Curves and surfaces:
-    interval, circle, knot,
-    torus, sphere, kleinbottle
-
-    # TODO: replace most uses of idpad with PaddedViews.
+    dim, codim, ambientdim,
+    # Manifolds:
+    Manifold,
+    Interval, Circle, Sphere, NSphere, Knot, ProductSpace, CartesianSpace
 end

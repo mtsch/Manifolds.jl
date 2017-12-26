@@ -1,67 +1,133 @@
-idpad = Manifolds.idpad
+nrand = 100
 
-@testset "ParametricCurves" begin
-    @testset "sanity checks" begin
-        @test dim(Interval()) == 1
-        @test ambientdim(Interval()) == 1
-        @test dim(Circle()) == 1
-        @test ambientdim(Circle()) == 2
-        @test dim(Knot()) == 1
-        @test ambientdim(Knot()) == 3
+@testset "Interval" begin
+    @testset "Basics" begin
+        for _ in 1:nruns
+            len = 5rand() + 1
+            t   = rand()
+            i1  = Interval(len)
+            val = i1(t)
+            @test length(val) == 1
+            @test val[1] ≈ t * len
+
+            i2  = Interval(x -> x^2)
+            val = i2(t, scale = len)
+            @test val[1] ≈ t * len^2
+        end
     end
 
-    curves = [interval(), circle(), knot()]
+    @testset "rand" begin
+        for _ in 1:nruns
+            len = 5rand() + 1
+            i1  = Interval(len)
+            @test all(0 .< rand(i1, nrand) .< len)
 
-    @testset "frames" begin
-        p, α = rand(2)
-        f = frame(interval(α), p)
-        @test basis(f) == eye(3)
-        @test point(f) == [α*p, 0, 0]
-
-        α = rand()
-        f = frame(circle(α), 0.0)
-        @test basis(f) ≈ [0 -1  0;
-                          1  0  0;
-                          0  0  1] atol = 1e-16
-        @test point(f) ≈ [α, 0, 0] atol = 1e-16
-
-        α = rand()
-        f = frame(circle(α), 0.25)
-        @test basis(f) ≈ [-1  0  0;
-                           0 -1  0;
-                           0  0  1] atol = 1e-16
-        @test point(f) ≈ [ 0, α, 0] atol = 1e-16
-
-        for t in rand(n_runs)
-            f1 = frame(knot(), t)
-            f2 = frame(knot(), t + 1)
-
-            @test basis(f1) ≈ basis(f2) atol = 1e-16
-            @test point(f1) ≈ point(f2) atol = 1e-16
+            i2  = Interval(x -> x^2)
+            @test all(0 .< rand(i1, nrand, scale = len) .< len^2)
         end
+    end
+end
 
-        for t in rand(n_runs)
-            for c in curves
-                @test idpad(c(t), 3) == idpad(point(frame(c, t)), 3)
-            end
+@testset "NSphere" begin
+    @testset "Basics" begin
+        for d in 1:nruns
+            rad = 5rand() + 1
+            sp1 = NSphere{d}(rad)
+            val = sp1(fill(rand(), d)...)
+            @test length(val) == d + 1
+            @test norm(val) ≈ rad
+
+            sp2 = NSphere{d}(x -> x^2)
+            val = sp2(fill(rand(), d)..., scale = rad)
+            @test norm(val) ≈ rad^2
         end
+    end
+
+    @testset "rand" begin
+        for d in 1:nruns
+            rad = 5rand() + 1
+            sp1 = NSphere{d}(rad)
+            @test all(mapslices(norm, rand(sp1, nrand), 1) .≈ rad)
+
+            sp2 = NSphere{d}(x -> x^2)
+            @test all(mapslices(norm, rand(sp2, nrand, scale = rad), 1) .≈ rad^2)
+        end
+    end
+end
+
+@testset "Knot" begin
+end
+
+@testset "ProductSpace" begin
+    # Do Torus, Cylinder, Interval^n
+
+    torus = Circle(3.0) * Circle()
+    for _ in 1:nruns
 
     end
 
-    @testset "eval" begin
-        # Interval.
-        for t in rand(n_runs)
-            α = rand()
-            @test interval(α)(t) == [α * t]
+    # TODO: broken for d > 3, Interval()^6
+    #=
+    @testset "Intervals" begin
+        for d in 1 + (1:nruns)
+            lens = 5rand(d) + 1
+            intd = prod(Interval(l) for l in lens)
+
+            @test typeof(intd) == ProductSpace{d, 0, d}
+            ts = rand(d)
+            @test intd(ts...) ≈ ts .* lens
         end
-        # Circle.
-        for α in rand(n_runs)
-            @test circle(α)(0)    ≈ [ α, 0]
-            @test circle(α)(0.25) ≈ [ 0, α]
-            @test circle(α)(0.5)  ≈ [-α, 0]
-            @test circle(α)(0.75) ≈ [ 0,-α]
-            @test circle(α)(1)    ≈ [ α, 0]
-        end
-        # Skipping knot.
     end
+    =#
+
+    @testset "tnbframe errors" begin
+        # No error.
+        circxglome = Circle() * NSphere{3}()
+        @test circxglome            ≠ nothing
+        @test Circle()^5            ≠ nothing
+        @test Sphere()^5            ≠ nothing
+        @test Interval()^5          ≠ nothing
+        @test Circle() * circxglome ≠ nothing
+        # Error / tnbframe not defined.
+        @test_throws ErrorException NSphere{3}() * Circle()
+        @test_throws ErrorException circxglome * Circle()
+        @test_throws ErrorException circxglome * circxglome
+    end
+end
+
+@testset "CartesianSpace" begin
+    @testset "Clifford Torus" begin
+        r1, r2 = 5rand(2) + 1
+        clifft = Circle(r1) × Circle(r2)
+        @test typeof(clifft) == CartesianSpace{2, 2, 2}
+
+        for _ in 1:nruns
+            t1, t2 = rand(2)
+            @test clifft(t1, t2) ≈ [r1*cos(2π*t1), r1*sin(2π*t1),
+                                    r2*cos(2π*t2), r2*sin(2π*t2)]
+        end
+    end
+
+    @testset "Intervals" begin
+        for d in 1 + (1:nruns)
+            lens = 5rand(d) + 1
+            intd = reduce(×, Interval(l) for l in lens)
+
+            @test typeof(intd) == CartesianSpace{d, 0, d}
+            ts = rand(d)
+            @test intd(ts...) ≈ ts .* lens
+        end
+    end
+end
+
+@testset "when * ≡ ×" begin
+    for _ in 1:nruns
+        t, u, v = rand(3)
+        @test (Interval() * Interval())(t, u)  ≈ (Interval() × Interval())(t, u)
+        @test (Interval() * Circle())(t, u)    ≈ (Interval() × Circle())(t, u)
+        @test (Interval() * Sphere())(t, u, v) ≈ (Interval() × Sphere())(t, u, v)
+    end
+end
+
+@testset "tnbframe" begin
 end

@@ -6,6 +6,10 @@
         pts = map(p -> idpad(p, 3), pts)
     end
 
+    linewidth --> 2
+    color --> :orange
+    legend --> false
+
     xs = getindex.(pts, 1)
     ys = getindex.(pts, 2)
     zs = getindex.(pts, 3)
@@ -75,4 +79,36 @@ end
             [p[1], B[1, i]], [p[2], B[2, i]], [p[3], B[3, i]]
         end
     end
+end
+
+# 3d points.
+@userplot Points3d
+
+@recipe function f(p::Points3d; project_to=eye(3))
+    if length(p.args) != 1 || !(typeof(first(p.args)) <: AbstractMatrix)
+        error("points3d is expecting a single matrix argument. " *
+              "Got: $(typeof(p.args))")
+    end
+
+    @assert size(project_to, 2) == 3
+    pts = first(p.args)
+    dim = size(pts, 1)
+
+    if dim ≤ 2
+        pts = [pts; zeros(3 - dim, size(pts, 2))]
+    end
+
+    # projection matrix
+    Δ = size(pts, 1) - size(project_to, 1)
+    if Δ > 0
+        X = [project_to; zeros(Δ, 3)]
+    else
+        X = project_to
+    end
+
+    pts = X'pts
+
+    seriestype := :scatter
+    markersize --> 0.5
+    pts[1, :], pts[2, :], pts[3, :]
 end

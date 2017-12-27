@@ -2,7 +2,7 @@
     id = Manifolds.id(1)
 
     @testset "Rotations" begin
-        for _ in 1:n_runs
+        for _ in 1:nruns
             θ, φ = 2π * rand(2)
 
             @test rotate_x(θ) ∘ rotate_x(-θ) ≈ id
@@ -50,7 +50,7 @@
     end
 
     @testset "Translations" begin
-        for dim in 1:n_runs
+        for dim in 1:nruns
             a = 5rand(dim)
             b = 5rand(dim)
 

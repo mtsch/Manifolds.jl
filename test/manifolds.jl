@@ -1,6 +1,11 @@
+# Number of points used in rand testing.
 nrand = 100
 
 @testset "Interval" begin
+    @test dim(Interval(rand())) == 1
+    @test codim(Interval(rand())) == 0
+    @test ambientdim(Interval(rand())) == 1
+
     @testset "Basics" begin
         for _ in 1:nruns
             len = 5rand() + 1
@@ -40,6 +45,10 @@ end
             sp2 = NSphere{d}(x -> x^2)
             val = sp2(fill(rand(), d)..., scale = rad)
             @test norm(val) ≈ rad^2
+
+            @test dim(sp1) == d
+            @test codim(sp1) == 1
+            @test ambientdim(sp1) == d + 1
         end
     end
 
@@ -56,17 +65,33 @@ end
 end
 
 @testset "Knot" begin
+    # TODO: How to test this????
+    @testset "Basics" begin
+        for _ in 1:nruns
+        end
+    end
 end
 
 @testset "ProductSpace" begin
     # Do Torus, Cylinder, Interval^n
 
-    torus = Circle(3.0) * Circle()
-    for _ in 1:nruns
+    @testset "Torus" begin
+        torus31 = Circle(3.0) * Circle()
+        circ2   = Circle(2.0)
+        circ3   = Circle(3.0)
+        circ4   = Circle(4.0)
 
+        for _ in 1:nruns
+            t = rand()
+            @test torus31(t, 0)    ≈ [circ2(t); 0] atol = 1e-16
+            @test torus31(t, 0.5)  ≈ [circ4(t); 0] atol = 1e-16
+            @test torus31(t, 0.25) ≈ [circ3(t); 1] atol = 1e-16
+            @test torus31(t, 0.75) ≈ [circ3(t);-1] atol = 1e-16
+        end
     end
 
-    # TODO: broken for d > 3, Interval()^6
+
+    # TODO: lifting broken for d > 3
     #=
     @testset "Intervals" begin
         for d in 1 + (1:nruns)
@@ -76,6 +101,14 @@ end
             @test typeof(intd) == ProductSpace{d, 0, d}
             ts = rand(d)
             @test intd(ts...) ≈ ts .* lens
+        end
+    end
+
+    @testset "Circles" begin
+        for n in 1 + (1:nruns)
+            mf = Circle()^n
+            @test mf(fill(.25, n)...) ≈ vcat(0, fill(1, n))  atol = 1e-16
+            @test mf(fill(.75, n)...) ≈ vcat(0, fill(-1, n)) atol = 1e-16
         end
     end
     =#
@@ -130,4 +163,12 @@ end
 end
 
 @testset "tnbframe" begin
+    @testset "Interval" begin
+    end
+
+    @testset "Curve" begin
+    end
+
+    @testset "Surface" begin
+    end
 end

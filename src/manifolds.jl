@@ -5,8 +5,18 @@ dim(::Manifold{D}) where D = D
 codim(::Manifold{D, C}) where {D, C} = C
 ambientdim(::Manifold{D, C}) where {D, C} = D + C
 
-# TODO: specialize for Manifold{1, 2}?
+# Allow arithmetic.
+struct UnitSpace <: Manifold{0, 0} end
+
+Base.oneunit(::Type{<:Manifold}) = UnitSpace()
+Base.one(::Type{<:Manifold}) = UnitSpace()
+Base.oneunit(::Manifold) = UnitSpace()
+Base.one(::Manifold) = UnitSpace()
+Base.copy(man::Manifold) = man
+
+# TODO: specialize for Manifold{1, 2} -- binormal always [0,0,1]?
 # TODO: lifting might be wrong with high dimensional spaces.
+# TODO: TransformedManifold - A*m where A is a matrix?
 """
     tnbframe(man::Manifold, ts...; scale=nothing)
 
@@ -14,7 +24,7 @@ Return a point and coordinate frame perpendicular to the manifold `man`
 evaluated at `man(ts..., scale=scale)` wrapped in a `RigidTransformation`.
 """
 function tnbframe(man::Manifold{1, C}, t::T, scale=nothing) where {C, T}
-    C > 2 && error("Cannot calculate the tnbframe!") # TODO: figure this out.
+    C > 2 && error("Cannot calculate the tnbframe!") # TODO: figure this out - it might work.
 
     t_dual = Dual{:d1}(Dual{:d2}(t, one(T)), one(T))
     if scale == nothing
@@ -25,10 +35,11 @@ function tnbframe(man::Manifold{1, C}, t::T, scale=nothing) where {C, T}
 
     tangent  = normalize(value.(partials.(val, 1)))
     normal   = partials.(partials.(val, 1), 1)
-    binotmal = normalize(tangent × normal)
+    binormal = normalize(tangent × normal)
     normal   = binormal × tangent
 
-    RigidTransformation(SMatrix{3,3}([n b t]), value.(value.(val)))
+    RigidTransformation(SMatrix{3,3}([tangent normal binormal]),
+                        value.(value.(val)))
 end
 
 function tnbframe(man::Manifold{1, 0}, t::T, scale=nothing) where T
@@ -49,12 +60,12 @@ function tnbframe(man::Manifold{2}, t1, t2, scale=nothing)
         J   = jacobian(v -> man(v[1:end-1]..., scale=v[end]), [t1, t2, scale])
     end
 
-    n = normalize(J[:, 1])
-    b = J[:, 2]
-    t = normalize(n × b)
-    b = -(n × t)
+    tangent  = normalize(J[:, 1])
+    normal   = J[:, 2]
+    binormal = normalize(tangent × normal)
+    normal   = binormal × tangent
 
-    RigidTransformation(SMatrix{3, 3}([n b t]), val)
+    RigidTransformation(SMatrix{3, 3}([tangent normal binormal]), val)
 end
 
 # TODO: support other number types -- add type parameter to Manifold*.
@@ -117,6 +128,7 @@ end
 """
 TODO.
 """
+# TODO: come up with nice names for parameters.
 struct Knot{T} <: Manifold{1, 2}
     p::T
     q::T
@@ -210,8 +222,11 @@ function Base.:*(ps1::ProductSpace{D1, C1, N1},
     tnbframe_exists_throw(ps1.spaces[end])
     D = D1 + D2
     C = max(D1 + C1, D1 + D2 + C2) - D
-    ProductSpace{D, C, N1+N2}((ps1.spaces..., ps1.spaces...))
+    ProductSpace{D, C, N1+N2}((ps1.spaces..., ps2.spaces...))
 end
+
+Base.:*(ps::ProductSpace, us::UnitSpace) = ps
+Base.:*(us::UnitSpace, ps::ProductSpace) = ps
 
 """
 """
@@ -274,5 +289,8 @@ end
 
 function Base.cross(cs1::CartesianSpace{D1, C1, N1},
                     cs2::CartesianSpace{D2, C2, N2}) where {D1,D2,C1,C2,N1,N2}
-    CartesianSpace{D1+D2, C1+C2, N1+N2}((cs1.spaces..., cs1.spaces...))
+    CartesianSpace{D1+D2, C1+C2, N1+N2}((cs1.spaces..., cs2.spaces...))
 end
+
+Base.cross(cs::CartesianSpace, us::UnitSpace) = cs
+Base.cross(us::UnitSpace, cs::CartesianSpace) = cs

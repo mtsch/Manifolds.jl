@@ -72,6 +72,24 @@ end
     end
 end
 
+@testset "UnitSpace, copy" begin
+    u = UnitSpace()
+    for space in [Interval(),
+                  Knot(),
+                  NSphere{10}(),
+                  Circle() * Circle(),
+                  Circle() × Circle(),
+                  Interval()^2 * (Knot() * NSphere{3}() × Interval() × Sphere()),
+                  UnitSpace()]
+        T = typeof(space)
+        @test space == u * space == space * u == u * space * u
+        @test space == u × space == space × u == u × space × u
+        @test u == one(space) == one(T)
+
+        @test copy(space) ≡ space
+    end
+end
+
 @testset "ProductSpace" begin
     # Do Torus, Cylinder, Interval^n
 
@@ -89,7 +107,6 @@ end
             @test torus31(t, 0.75) ≈ [circ3(t);-1] atol = 1e-16
         end
     end
-
 
     # TODO: lifting broken for d > 3
     #=
@@ -129,6 +146,7 @@ end
 end
 
 @testset "CartesianSpace" begin
+
     @testset "Clifford Torus" begin
         r1, r2 = 5rand(2) + 1
         clifft = Circle(r1) × Circle(r2)

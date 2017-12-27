@@ -8,66 +8,13 @@ ambientdim(::Manifold{D, C}) where {D, C} = D + C
 # Allow arithmetic.
 struct UnitSpace <: Manifold{0, 0} end
 
-Base.oneunit(::Type{<:Manifold}) = UnitSpace()
 Base.one(::Type{<:Manifold}) = UnitSpace()
-Base.oneunit(::Manifold) = UnitSpace()
 Base.one(::Manifold) = UnitSpace()
 Base.copy(man::Manifold) = man
 
 # TODO: specialize for Manifold{1, 2} -- binormal always [0,0,1]?
 # TODO: lifting might be wrong with high dimensional spaces.
 # TODO: TransformedManifold - A*m where A is a matrix?
-"""
-    tnbframe(man::Manifold, ts...; scale=nothing)
-
-Return a point and coordinate frame perpendicular to the manifold `man`
-evaluated at `man(ts..., scale=scale)` wrapped in a `RigidTransformation`.
-"""
-function tnbframe(man::Manifold{1, C}, t::T, scale=nothing) where {C, T}
-    C > 2 && error("Cannot calculate the tnbframe!") # TODO: figure this out - it might work.
-
-    t_dual = Dual{:d1}(Dual{:d2}(t, one(T)), one(T))
-    if scale == nothing
-        val = idpad(man(t_dual), 3)
-    else
-        val = idpad(man(t_dual, scale=scale), 3)
-    end
-
-    tangent  = normalize(value.(partials.(val, 1)))
-    normal   = partials.(partials.(val, 1), 1)
-    binormal = normalize(tangent × normal)
-    normal   = binormal × tangent
-
-    RigidTransformation(SMatrix{3,3}([tangent normal binormal]),
-                        value.(value.(val)))
-end
-
-function tnbframe(man::Manifold{1, 0}, t::T, scale=nothing) where T
-    if scale == nothing
-        val = man(t)[1]
-    else
-        val = man(t, scale = scale)[1]
-    end
-    RigidTransformation(eye(SMatrix{3, 3, T}), @SVector([val[1], 0, 0]))
-end
-
-function tnbframe(man::Manifold{2}, t1, t2, scale=nothing)
-    if scale == nothing
-        val = idpad(man(t1, t2), 3)
-        J   = jacobian(v -> man(v...), [t1, t2])
-    else
-        val = idpad(man(t1, t2, scale = scale), 3)
-        J   = jacobian(v -> man(v[1:end-1]..., scale=v[end]), [t1, t2, scale])
-    end
-
-    tangent  = normalize(J[:, 1])
-    normal   = J[:, 2]
-    binormal = normalize(tangent × normal)
-    normal   = binormal × tangent
-
-    RigidTransformation(SMatrix{3, 3}([tangent normal binormal]), val)
-end
-
 # TODO: support other number types -- add type parameter to Manifold*.
 Base.rand(man::Manifold, n; scale=nothing, noise=0) =
     rand(Base.GLOBAL_RNG, man, n, scale=scale, noise=noise)
@@ -227,6 +174,9 @@ end
 
 Base.:*(ps::ProductSpace, us::UnitSpace) = ps
 Base.:*(us::UnitSpace, ps::ProductSpace) = ps
+Base.:*(m::Manifold, us::UnitSpace) = m
+Base.:*(us::UnitSpace, m::Manifold) = m
+Base.:*(us1::UnitSpace, us2::UnitSpace) = us1
 
 """
 """
@@ -294,3 +244,6 @@ end
 
 Base.cross(cs::CartesianSpace, us::UnitSpace) = cs
 Base.cross(us::UnitSpace, cs::CartesianSpace) = cs
+Base.cross(m::Manifold, us::UnitSpace) = m
+Base.cross(us::UnitSpace, m::Manifold) = m
+Base.cross(us1::UnitSpace, us2::UnitSpace) = us1

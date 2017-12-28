@@ -6,6 +6,7 @@ using ForwardDiff: jacobian, Dual, partials, value
 
 include("manifolds.jl")
 include("frames.jl")
+inclide("products.jl")
 include("plotting.jl")
 
 const Circle = NSphere{1}

@@ -42,9 +42,13 @@ idpad(arr::AbstractVector{T}, size::Int) where T =
     IDPadding{T, 1, typeof(arr)}(arr, (size,))
 
 # ============================================================================ #
-#TODO: Frame -> RigidTransformation?
+# TODO: clean up the chompzeros mess and add inplace Frame composition.
 """
+    Frame(basis_change, translation)
 
+The frame object represents a change of basis and a translation. It can be
+multiplied with a vector much like a matrix to transform the vector. The frame
+can be applied to a vector of any length.
 """
 struct Frame{T, M<:AbstractMatrix{T}, V<:AbstractVector{T}}
     basis_change::M
@@ -99,7 +103,6 @@ function Base.:(==)(fr1::Frame, fr2::Frame)
     fr1.translation == fr2.translation
 end
 
-#lift(t1(t2)) == t1(lift(t2)) ≠ lift(t1)(t2)
 function Base.:*(fr::Frame{T1}, vec::AbstractVector{T2}) where {T1, T2}
     dim_incr  = size(fr.basis_change, 1) - size(fr.basis_change, 2)
     in_dim    = length(vec)
@@ -113,22 +116,16 @@ function Base.:*(fr::Frame{T1}, vec::AbstractVector{T2}) where {T1, T2}
     res
 end
 
-# TODO TOLE PA TO
 function Base.:*(fr1::Frame{T1}, fr2::Frame{T2}) where {T1, T2}
     T = promote_type(T1, T2)
-
-    # Najprej množiš fr1 * fr2.basis, to liftaš s fr2.dim_increase,
-    # potem dodaš fr1.translation, transformacijo samo množiš s fr1
 
     out1, in1 = size(fr1.basis_change)
     out2, in2 = size(fr2.basis_change)
     common_dim = max(in1, in2, out1, out2)
     padding = (common_dim + 1, common_dim + 1)
 
-
     new_basis = idpad(fr1.basis_change, padding) *
         idpad(fr2.basis_change, padding)
-    # n × m * m × p -> n × p
 
     Frame(chompzeros(new_basis), fr1 * fr2.translation)
 end
@@ -137,8 +134,20 @@ end
 """
     tnbframe(man::Manifold, ts...; scale=nothing)
 
-Return a point and coordinate frame perpendicular to the manifold `man`
-evaluated at `man(ts..., scale=scale)` wrapped in a `RigidTransformation`.
+Return a coordinate system (wrapped in a `Frame` object) that is perpendicular
+to the manifold `man` evaluated at `(ts, scale)`.
+
+For example for a curve, the `Frame` is a mapping:
+
+* x ↦ N
+* y ↦ B
+
+where N and B are the normal and binormal vectors.
+z and higher coordinates are mapped to unit vectors in higher dimensions, in the
+curve case, z ↦ [0,0,0,1].
+
+The frame also includes a translation that is equal to
+`man(ts..., scale = scale)`.
 """
 function tnbframe(man::Manifold{1, C}, t::T, scale=nothing) where {C, T}
     C > 2 && error("Cannot calculate the tnbframe!") # TODO: figure this out - it might work.
@@ -177,10 +186,7 @@ function tnbframe(man::Manifold{2}, t1, t2, scale=nothing)
         J   = jacobian(v -> man(v[1:end-1]..., scale=v[end]), [t1, t2, scale])
     end
 
-    tangent  = normalize(J[:, 1])
-    normal   = J[:, 2]
-    binormal = normalize(tangent × normal)
-    normal   = binormal × tangent
+    normal = normalize(J[:, 2] × J[:, 1])
 
-    Frame(reshape(binormal, length(binormal), 1), val)
+    Frame(reshape(normal, length(binormal), 1), val)
 end

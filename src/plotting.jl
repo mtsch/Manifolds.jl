@@ -44,7 +44,7 @@ end
     xs, ys, zs
 end
 
-# TODO
+# TODO: unsatisfying
 @recipe function f(s::Manifold{3}, from=[0,0,0], to=[1,1,1];
                    npoints = 10) #where N
 
@@ -69,7 +69,7 @@ end
 # Transformation
 @recipe function f(fr::Frame)
     p = idpad(fr.translation, 3)
-    B = 0.5idpad(fr.basis, 3, fr.dim_increase) .+ p
+    B = 0.5idpad(fr.basis_change, 3) .+ p
 
     for (i, col, coord) in zip(1:3, [:red, :green, :blue], [:x, :y, :z])
         @series begin
@@ -83,7 +83,6 @@ end
 
 # 3d points.
 @userplot Points3d
-
 @recipe function f(p::Points3d; project_to=eye(3))
     if length(p.args) != 1 || !(typeof(first(p.args)) <: AbstractMatrix)
         error("points3d is expecting a single matrix argument. " *

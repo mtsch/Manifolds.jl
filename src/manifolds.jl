@@ -119,17 +119,17 @@ function (ps::ProductSpace{D, C, N})(args::Vararg{T, D}) where {T, D, C, N}
     spaces = ps.spaces
 
     argoffset = 0
-    trans = id(1, T)
+    trans = Frame(eye(T, 1), [zero(T)])
     t = zero(T)
     for i in 1:N-1
         d = dim(spaces[i])
-        trans = lift(trans(tnbframe(spaces[i], args[argoffset + (1:d)]..., t)), d)
+        trans *= tnbframe(spaces[i], args[argoffset + (1:d)]..., t)
 
         t = args[argoffset + (1:d)]
         argoffset += d
     end
 
-    trans(ps.spaces[end](args[argoffset+1:end]..., scale=t))[1:D+C]
+    (trans * ps.spaces[end](args[argoffset+1:end]..., scale=t))
 end
 
 @inline function tnbframe_exists_throw(m::Manifold{D}) where D

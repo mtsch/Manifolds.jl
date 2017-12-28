@@ -4,13 +4,12 @@ using StaticArrays
 using RecipesBase
 using ForwardDiff: jacobian, Dual, partials, value
 
-#include("transformations.jl")
-#include("manifolds.jl")
+include("manifolds.jl")
 include("frames.jl")
-#include("plotting.jl")
+include("plotting.jl")
 
-#const Circle = NSphere{1}
-#const Sphere = NSphere{2}
+const Circle = NSphere{1}
+const Sphere = NSphere{2}
 
 export
     # Transformations:

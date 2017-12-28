@@ -67,9 +67,9 @@ end
 end
 
 # Transformation
-@recipe function f(rt::RigidTransformation)
-    p = point(rt)
-    B = 0.5basis(rt) .+ p
+@recipe function f(fr::Frame)
+    p = idpad(fr.translation, 3)
+    B = 0.5idpad(fr.basis, 3, fr.dim_increase) .+ p
 
     for (i, col, coord) in zip(1:3, [:red, :green, :blue], [:x, :y, :z])
         @series begin

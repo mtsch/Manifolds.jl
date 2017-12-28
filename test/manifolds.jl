@@ -108,8 +108,6 @@ end
         end
     end
 
-    # TODO: lifting broken for d > 3
-    #=
     @testset "Intervals" begin
         for d in 1 + (1:nruns)
             lens = 5rand(d) + 1
@@ -128,7 +126,6 @@ end
             @test mf(fill(.75, n)...) ≈ vcat(0, fill(-1, n)) atol = 1e-16
         end
     end
-    =#
 
     @testset "tnbframe errors" begin
         # No error.
@@ -171,22 +168,11 @@ end
     end
 end
 
-@testset "when * ≡ ×" begin
+@testset "when * == ×" begin
     for _ in 1:nruns
         t, u, v = rand(3)
         @test (Interval() * Interval())(t, u)  ≈ (Interval() × Interval())(t, u)
         @test (Interval() * Circle())(t, u)    ≈ (Interval() × Circle())(t, u)
         @test (Interval() * Sphere())(t, u, v) ≈ (Interval() × Sphere())(t, u, v)
-    end
-end
-
-@testset "tnbframe" begin
-    @testset "Interval" begin
-    end
-
-    @testset "Curve" begin
-    end
-
-    @testset "Surface" begin
     end
 end

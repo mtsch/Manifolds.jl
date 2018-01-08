@@ -5,8 +5,7 @@ end
 
 Base.size(idp::IDPadding) = idp.size
 
-Base.IndexStyle(::Type{IDPadding{T, 1}}) where T = IndexLinear()
-Base.IndexStyle(::Type{IDPadding{T, 2}}) where T = IndexCartesian()
+Base.IndexStyle(::Type{IDPadding{T, 1, A}}) where {T, A} = IndexLinear()
 
 function Base.getindex(idp::IDPadding{T, 1}, i) where T
     if i > length(idp.data)

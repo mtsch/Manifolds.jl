@@ -108,7 +108,29 @@ end
         end
     end
 
-    @testset "Intervals" begin
+    @testset "Cylinder" begin
+        cyl  = Interval() * Circle()
+        circ = Circle()
+
+        for _ in 1:nruns
+            t1, t2 = rand(2)
+            @test cyl(t1, t2) ≈ [t1; circ(t2)]
+        end
+    end
+
+    @testset "Ring" begin
+        ring  = Circle(3) * Interval()
+        circ2 = Circle(2)
+        circ3 = Circle(3)
+
+        for _ in 1:nruns
+            t = rand()
+            @test ring(t, 1) ≈ circ2(t)
+            @test ring(t, 0) ≈ circ3(t)
+        end
+    end
+
+    @testset "Interval^n" begin
         for d in 1 + (1:nruns)
             lens = 5rand(d) + 1
             intd = prod(Interval(l) for l in lens)
@@ -119,7 +141,7 @@ end
         end
     end
 
-    @testset "Circles" begin
+    @testset "Circle^n" begin
         for n in 1 + (1:nruns)
             mf = Circle()^n
             @test mf(fill(.25, n)...) ≈ vcat(0, fill(1, n))  atol = 1e-16
@@ -156,7 +178,17 @@ end
         end
     end
 
-    @testset "Intervals" begin
+    @testset "Cylinder" begin
+        cyl  = Interval() × Circle()
+        circ = Circle()
+
+        for _ in 1:nruns
+            t1, t2 = rand(2)
+            @test cyl(t1, t2) ≈ [t1; circ(t2)]
+        end
+    end
+
+    @testset "Interval^n" begin
         for d in 1 + (1:nruns)
             lens = 5rand(d) + 1
             intd = reduce(×, Interval(l) for l in lens)
@@ -169,10 +201,16 @@ end
 end
 
 @testset "when * == ×" begin
-    for _ in 1:nruns
+    for n in 1:nruns
         t, u, v = rand(3)
         @test (Interval() * Interval())(t, u)  ≈ (Interval() × Interval())(t, u)
         @test (Interval() * Circle())(t, u)    ≈ (Interval() × Circle())(t, u)
         @test (Interval() * Sphere())(t, u, v) ≈ (Interval() × Sphere())(t, u, v)
+
+        prod_space = reduce(*, fill(Interval(), n)) * NSphere{n}()
+        cart_space = reduce(×, fill(Interval(), n)) × NSphere{n}()
+        inputs     = rand(n + n)
+
+        @test prod_space(inputs...) ≈ cart_space(inputs...)
     end
 end

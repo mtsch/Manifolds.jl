@@ -1,3 +1,9 @@
+# Unit for * and ×.
+struct UnitSpace <: Manifold{0, 0} end
+
+Base.one(::Type{<:Manifold}) = UnitSpace()
+Base.one(::Manifold) = UnitSpace()
+
 """
 TODO
 """

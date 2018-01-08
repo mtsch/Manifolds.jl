@@ -5,8 +5,8 @@ end
 
 Base.size(idp::IDPadding) = idp.size
 
-Base.IndexStyle(::IDPadding{T, 1}) where T = IndexLinear()
-Base.IndexStyle(::IDPadding{T, 2}) where T = IndexCartesian()
+Base.IndexStyle(::Type{IDPadding{T, 1}}) where T = IndexLinear()
+Base.IndexStyle(::Type{IDPadding{T, 2}}) where T = IndexCartesian()
 
 function Base.getindex(idp::IDPadding{T, 1}, i) where T
     if i > length(idp.data)
@@ -29,17 +29,17 @@ function Base.getindex(idp::IDPadding{T, 2}, i, j) where T
 end
 
 """
-    idpad(arr::AbstractArray{T, N}, size::NTuple{N, Int})
+    idpad(arr, size)
 
-Pad array `arr` with idenity matrix of the same dimension to `size`.
+Pad array `arr` with idenity matrix to `size`.
 Pad vectors with zeros.
 """
-idpad(arr::AbstractMatrix{T}, size::Tuple{Int, Int}) where T =
-    IDPadding{T, 2, typeof(arr)}(arr, size)
-idpad(arr::AbstractMatrix{T}, size::Int) where T =
-    IDPadding{T, 2, typeof(arr)}(arr, (size, size))
-idpad(arr::AbstractVector{T}, size::Int) where T =
-    IDPadding{T, 1, typeof(arr)}(arr, (size,))
+idpad(arr::AbstractMatrix{T}, s::Tuple{Int, Int}) where T =
+    IDPadding{T, 2, typeof(arr)}(arr, s)
+idpad(arr::AbstractMatrix{T}, s::Int) where T =
+    IDPadding{T, 2, typeof(arr)}(arr, (s, s))
+idpad(arr::AbstractVector{T}, s::Int) where T =
+    IDPadding{T, 1, typeof(arr)}(arr, (s,))
 
 # ============================================================================ #
 # TODO: clean up the chompzeros mess and add inplace Frame composition.
@@ -135,22 +135,23 @@ end
     tnbframe(man::Manifold, ts...; scale=nothing)
 
 Return a coordinate system (wrapped in a `Frame` object) that is perpendicular
-to the manifold `man` evaluated at `(ts, scale)`.
+to the manifold `man` evaluated at `(ts, scale=scale)`.
 
 For example for a curve, the `Frame` is a mapping:
 
 * x ↦ N
 * y ↦ B
+* z ↦ [0,0,0,1]
+* w ↦ [0,0,0,0,1] ...
 
 where N and B are the normal and binormal vectors.
-z and higher coordinates are mapped to unit vectors in higher dimensions, in the
-curve case, z ↦ [0,0,0,1].
 
 The frame also includes a translation that is equal to
 `man(ts..., scale = scale)`.
 """
 function tnbframe(man::Manifold{1, C}, t::T, scale=nothing) where {C, T}
-    C > 2 && error("Cannot calculate the tnbframe!") # TODO: figure this out - it might work.
+    # TODO: figure this out.
+    C > 2 && error("Cannot calculate the tnbframe!")
 
     t_dual = Dual{:d1}(Dual{:d2}(t, one(T)), one(T))
     if scale == nothing

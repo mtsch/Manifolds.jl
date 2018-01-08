@@ -1,14 +1,14 @@
 # Curve
-@recipe function f(c::Manifold{1, C}, from=0, to=1; npoints=1000) where C
-    pts = c.(linspace(from, to, npoints))
+@recipe function f(curve::Manifold{1, C}, from = 0, to = 1;
+                   npoints=1000, projection = eye(3)) where C
+    # projection matrix
+    X = idpad(projection, (1+C, 3))
 
-    if C ≤ 2
-        pts = map(p -> idpad(p, 3), pts)
-    end
+    pts = [X'curve(t) for t in linspace(from, to, npoints)]
 
     linewidth --> 2
-    color --> :orange
-    legend --> false
+    color     --> :orange
+    legend    --> false
 
     xs = getindex.(pts, 1)
     ys = getindex.(pts, 2)
@@ -18,37 +18,25 @@
 end
 
 # Surface
-@recipe function f(s::Manifold{2, C}, from=[0,0], to=[1,1];
-                   npoints = 100, project_to = eye(3)) where C
-    @assert size(project_to, 2) == 3
-
+@recipe function f(surface::Manifold{2, C}, from = [0,0], to = [1,1];
+                   npoints = 100, projection = eye(3)) where C
     # projection matrix
-    Δ = C+2-size(project_to, 1)
-    if Δ > 0
-        X = [project_to; zeros(Δ, 3)]
-    else
-        X = project_to
-    end
+    X = idpad(projection, (2+C, 3))
 
     xs = zeros(npoints, npoints)
     ys = zeros(npoints, npoints)
     zs = zeros(npoints, npoints)
     for (i, θ) in enumerate(linspace(from[1], to[1], npoints)),
         (j, φ) in enumerate(linspace(from[2], to[2], npoints))
-        x, y, z = (X'idpad(s(θ, φ), 3))[1:3]
-        xs[i, j] = x
-        ys[i, j] = y
-        zs[i, j] = z
+        xs[i, j], ys[i, j], zs[i, j] = X'surface(θ, φ)
     end
     seriestype := :surface
     xs, ys, zs
 end
 
 # TODO: unsatisfying
-@recipe function f(s::Manifold{3}, from=[0,0,0], to=[1,1,1];
-                   npoints = 10) #where N
-
-    #N= 3
+@recipe function f(s::Manifold{3}, from = [0,0,0], to = [1,1,1];
+                   npoints = 10)
     xs = Float64[]
     ys = Float64[]
     zs = Float64[]
@@ -83,27 +71,18 @@ end
 
 # 3d points.
 @userplot Points3d
-@recipe function f(p::Points3d; project_to=eye(3))
+@recipe function f(p::Points3d; projection = eye(3))
     if length(p.args) != 1 || !(typeof(first(p.args)) <: AbstractMatrix)
         error("points3d is expecting a single matrix argument. " *
               "Got: $(typeof(p.args))")
     end
 
-    @assert size(project_to, 2) == 3
+    @assert size(projection, 2) == 3
     pts = first(p.args)
     dim = size(pts, 1)
 
-    if dim ≤ 2
-        pts = [pts; zeros(3 - dim, size(pts, 2))]
-    end
-
     # projection matrix
-    Δ = size(pts, 1) - size(project_to, 1)
-    if Δ > 0
-        X = [project_to; zeros(Δ, 3)]
-    else
-        X = project_to
-    end
+    X = idpad(projection, (dim, 3))
 
     pts = X'pts
 

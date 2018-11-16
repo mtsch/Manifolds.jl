@@ -1,41 +1,68 @@
+# remove codim
 """
-    Manifold{D, C}
+    AbstractAbstractManifold{D, C}
 
-A manifold of dimension `D` and codimension `C`. A `Manifold` must be callable
-with `D` arguments and should return a vector of length `D + C`. The call should
-also include a `scale` keyword argument that is used to scale its overall size.
+A manifold of dimension `D` and codimension `C`. An `AbstractAbstractManifold` must be
+callable with `D` arguments and should return a tuple of length `D + C`.
 """
-abstract type Manifold{Dimension, Codimension} end
+abstract type AbstractAbstractManifold{D, C} end
 
-dim(::Manifold{D}) where D = D
-codim(::Manifold{D, C}) where {D, C} = C
-ambientdim(::Manifold{D, C}) where {D, C} = D + C
+dim(::AbstractManifold{D}) where D = D
+codim(::AbstractManifold{D, C}) where {D, C} = C
+ambientdim(::AbstractManifold{D, C}) where {D, C} = D + C
 
-Base.copy(man::Manifold) = man
+Base.copy(man::AbstractManifold) = man
 
-Base.rand(man::Manifold, n; scale = nothing, noise = 0) =
-    rand(Base.GLOBAL_RNG, man, n, scale = scale, noise = noise)
+Base.rand(man::AbstractManifold, n) =
+    rand(Base.GLOBAL_RNG, man, n)
 
-function Base.rand(rng::AbstractRNG, man::Manifold{D, C}, n = 1;
-                   scale = nothing, noise = 0) where {D, C}
-    res = Matrix{Float64}(D + C, n)
+function Base.rand(rng::AbstractRNG, man::AbstractManifold{D, A}, n = 1) where {D, A}
+    [SVector{D + C, T}(man(rand(rng, D)...)) for _ in 1:n]
+end
+
+struct ParametricManifold{D, A, F} <: AbstractManifold{D, A}
+    f::F
+end
+
+function curve(f, codim)
+
+end
+
+"""
+    NSphere{N}(r::Union{Funtcion, Number})
+
+A N-Sphere with radius `r`. Circles and 3-Spheres can be constructed with
+`Circle(r)` and `Sphere(r)`, respectively.
+"""
+struct NSphere{N} <: AbstractManifold{N, 1}
+    r::Float64
+end
+
+NSphere{N}(r = 1.0) where N = NSphere{N}(Float64(r))
+
+function (s::NSphere{N})(varargs::Vararg{T, N}) where {N, T}
+    args = 2π .* varargs
+    s.r .* SVector((prod(sin.(args[1:i-1])) * cos(args[i]) for i in 1:N)...,
+                   prod(sin.(args[1:end])))
+end
+
+function Base.rand(rng::AbstractRNG, s::NSphere{N}, n = 1) where N
+
+    res = Vector{SVector{N+1, Float64}}(undef, n)
     for i in 1:n
-        hiss = noise * randn(D + C)
-        if scale == nothing
-            res[:, i] = man(rand(rng, D)...) .+ hiss
-        else
-            res[:, i] = man(rand(rng, D)..., scale=scale) .+ hiss
-        end
+        res[i] = s.r .* normalize!(@SVector randn(rng, N + 1))
     end
     res
 end
 
+
+#=
 """
     Interval(f::Union{Funtcion, Number})
 
 An interval scaled by `f`.
 """
-struct Interval <: Manifold{1, 0}
+struct Interval <: AbstractManifold{1, 0}
     scale::Function
 end
 
@@ -49,7 +76,7 @@ Interval(l::Number = 1.0) = Interval(_ -> l)
 A N-Sphere with radius `r`. Circles and 3-Spheres can be constructed with
 `Circle(r)` and `Sphere(r)`, respectively.
 """
-struct NSphere{N} <: Manifold{N, 1}
+struct NSphere{N} <: AbstractManifold{N, 1}
     scale::Function
 end
 
@@ -83,7 +110,7 @@ A knot parameterized by `p`, `q`, `n`, `m` and `h` and scaled by `scale`:
     z = h * sin(q*2π*t)])
 """
 # TODO: come up with nice names for parameters.
-struct Knot{T} <: Manifold{1, 2}
+struct Knot{T} <: AbstractManifold{1, 2}
     p::T
     q::T
     n::T
@@ -112,3 +139,5 @@ function (kn::Knot)(t; scale=0)
                                  m*sin(2π*p*t) + n*sin((2-q)*2π*t),
                                  h * sin(q*2π*t)])
 end
+
+=#

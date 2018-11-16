@@ -1,29 +1,57 @@
+struct EmbeddedArray{T, N, A<:AbstractArray{T, N}} <: AbstractArray{T, N}
+    data  ::A
+    start ::Int
+    size  ::Int
+end
+
+Base.size(ea::EmbeddedArray{T, N}) where {T, N} = ntuple(_->ea.size, Val(N))
+Base.IndexStyle(::Type{EmbeddedArray}) = IndexCartesian()
+
+function Base.getindex(ea::EmbeddedArray{T, N}, idxs::Vararg{<:Integer, N}) where {T, N}
+    @boundscheck (any(idxs .≤ 0) || any(idxs .> ea.size)) && throw(BoundsError(ea, idxs))
+
+    if any(idxs .< ea.start) || any(idxs .> (ea.start - 1) .+ size(ea.data))
+        N ≥ 2 && reduce(isequal, idxs) ? one(T) : zero(T)
+    else
+        ea.data[(idxs .- (ea.start - 1))...]
+    end
+end
+
+function embed(arr::AbstractArray{T, N}, dim, start=1) where {T, N}
+    any(size(arr) .+ (start - 1) .> dim) && throw(ArgumentError("Invalid dimensions"))
+    EmbeddedArray{T, N, typeof(arr)}(arr, start, dim)
+end
+
+function perpendicularsystem(v1::AbstractVector{T}, v2::AbstractVector{T}) where T
+    n = length(v1)
+    n == length(v2) ||
+        throw(ArgumentError("`v1` and `v2` should have the same length"))
+    nz = findall(!iszero, v1)
+    nz == findall(!iszero, v1) && length(nz1) == 2 ||
+        throw(ArgumentError("`v1` and `v2` should be non-zero the same two indices"))
+
+    M = Matrix{Float64}(I, n, n)
+    nv1 = normalize(v1)
+    nv2 = normalize(v2)
+end
+
+#=
 struct IDPadding{T, N, A<:AbstractArray{T, N}} <: AbstractArray{T, N}
     data::A
     size::NTuple{N, Int}
 end
 
 Base.size(idp::IDPadding) = idp.size
+Base.IndexStyle(::Type{IDPadding{T, 1, A}}) where {T, A} = IndexCartesian()
 
-Base.IndexStyle(::Type{IDPadding{T, 1, A}}) where {T, A} = IndexLinear()
+Base.getindex(idp::IDPadding{T, 1}, i::Integer) where T =
+    i > length(idp.data) ? zero(T) : idp.data[i]
 
-function Base.getindex(idp::IDPadding{T, 1}, i) where T
-    if i > length(idp.data)
-        zero(T)
+function Base.getindex(idp::IDPadding{T, N}, idxs::Vararg{<:Integer, N}) where {T, N}
+    if any(idxs .> size(idp.data))
+        reduce(isequal, idxs) ? one(T) : zero(T)
     else
-        idp.data[i]
-    end
-end
-
-function Base.getindex(idp::IDPadding{T, 2}, i, j) where T
-    s1, s2 = size(idp.data)
-
-    if i ≤ s1 && j ≤ s2
-        idp.data[i, j]
-    elseif i - s1 == j - s2
-        one(T)
-    else
-        zero(T)
+        idp.data[idxs...]
     end
 end
 
@@ -33,12 +61,10 @@ end
 Pad array `arr` with idenity matrix to `size`.
 Pad vectors with zeros.
 """
-idpad(arr::AbstractMatrix{T}, s::Tuple{Int, Int}) where T =
-    IDPadding{T, 2, typeof(arr)}(arr, s)
-idpad(arr::AbstractMatrix{T}, s::Int) where T =
-    IDPadding{T, 2, typeof(arr)}(arr, (s, s))
-idpad(arr::AbstractVector{T}, s::Int) where T =
-    IDPadding{T, 1, typeof(arr)}(arr, (s,))
+idpad(arr::AbstractArray{T, N}, s::NTuple{N, <:Integer}) where {T, N} =
+    IDPadding{T, N, typeof(arr)}(arr, s)
+idpad(arr::AbstractArray{T, N}, s::Integer) where {T, N} =
+    IDPadding{T, N, typeof(arr)}(arr, ntuple(_->s, N))
 
 # ============================================================================ #
 # TODO: clean up the chompzeros mess and add inplace Frame composition.
@@ -190,3 +216,5 @@ function tnbframe(man::Manifold{2}, t1, t2, scale=nothing)
 
     Frame(reshape(normal, length(binormal), 1), val)
 end
+
+=#

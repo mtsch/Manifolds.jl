@@ -1,3 +1,9 @@
+# TODO: * generalize products:
+#           * everything uses offsetframes
+#           * add flat product -- ModifiedManifold that prevents offsetframes from forming
+#           * add default flat offset frame
+#       * AbstractManifold{D, C} -- codimension
+#       * ParametricCurve --> ParametricManifold{D, C}, curves are special cases
 module Manifolds
 
 using LinearAlgebra

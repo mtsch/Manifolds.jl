@@ -1,11 +1,3 @@
-# TODO: vsak manifold{1} je curve
-#       posledično je circle tud
-#       mora se convertat št. outputov pred produktom.
-#       mogoče rezanje nul na koncu/codimension?
-
-# ScaledManifold
-# ReparameterizedManifold
-
 # = Abstract & helpers = #
 struct CurveProduct{D, T<:NTuple{D, Curve}} <: AbstractManifold{D}
     spaces ::T

@@ -54,21 +54,6 @@ end
     xs, ys, zs
 end
 
-# Transformation
-@recipe function f(fr::Frame)
-    p = idpad(fr.translation, 3)
-    B = 0.5idpad(fr.basis_change, 3) .+ p
-
-    for (i, col, coord) in zip(1:3, [:red, :green, :blue], [:x, :y, :z])
-        @series begin
-            color := col
-            label := coord
-            linewidth --> 2
-            [p[1], B[1, i]], [p[2], B[2, i]], [p[3], B[3, i]]
-        end
-    end
-end
-
 # 3d points.
 @userplot Points3d
 @recipe function f(p::Points3d; projection = eye(3))

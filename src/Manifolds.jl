@@ -1,24 +1,24 @@
 module Manifolds
 
-using StaticArrays
+using LinearAlgebra
+using Random
+using ForwardDiff: Dual, partials, value
 using RecipesBase
-using ForwardDiff: jacobian, Dual, partials, value
+using StaticArrays
 
-include("manifolds.jl")
-include("frames.jl")
+include("base.jl")
+include("modifiers.jl")
 include("products.jl")
 include("plotting.jl")
 
-const Circle = NSphere{1}
-const Sphere = NSphere{2}
-
 export
-    # Frame:
-    tnbframe,
-    # General:
-    dim, codim, ambientdim,
-    # Manifolds:
-    Manifold,
-    Interval, Circle, Sphere, NSphere, Knot,
-    UnitSpace, ProductSpace, CartesianSpace
+    # Types
+    AbstractManifold,
+    # Primitives
+    PointSpace, ParametricCurve, Sphere, Ball,
+    # Modifiers
+    ModifiedManifold, ReparametrizedManifold, ScaledManifold, TranslatedManifold,
+    reparametrized, scaled, translated,
+    # Helpers
+    chopzeros
 end

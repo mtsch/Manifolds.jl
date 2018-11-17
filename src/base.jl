@@ -1,13 +1,17 @@
 using Random
 using LinearAlgebra
 using ForwardDiff: Dual, value, partials
+using StaticArrays
 
 # Abstract, helpers ====================================================================== #
 abstract type AbstractManifold{D} end
 
+Base.rand(man::AbstractManifold) = rand(Random.GLOBAL_RNG, man)
+Base.rand(rng::AbstractRNG, man::AbstractManifold{D}) where D =
+    man(rand(Random.GLOBAL_RNG, D)...)
 Base.rand(man::AbstractManifold, n::Integer) = rand(Random.GLOBAL_RNG, man, n)
 Base.rand(rng::AbstractRNG, man::AbstractManifold{D}, n::Integer) where D =
-    [man(rand(rng, D)...) for _ in 1:n]
+    [rand(rng, man) for _ in 1:n]
 
 """
     offsetframe(man::AbstractManifold{D}, args::NTuple{D, T})
@@ -28,6 +32,35 @@ function idpad(M::AbstractMatrix{T}, d) where T
     end
     res
 end
+"""
+    chopzeros(arr::Vector{SVector})
+
+Reduce the dimension of elements of `arr` by removing dimensions where all elements are
+equal to zero.
+"""
+function chopzeros(arr::Vector{SVector{N, T}}) where {N, T}
+    # too magical?
+    mask = (!iszero).(sum(map(x -> (!iszero).(x), arr)))
+    M = count(mask)
+    map(SVector{M, T}, getindex.(arr, Ref(mask)))
+end
+
+# Point ================================================================================== #
+"""
+    PointSpace()
+
+Unit for `×`.
+"""
+struct PointSpace <: AbstractManifold{0} end
+Base.show(io::IO, ::PointSpace) = print(io, "{⋆}")
+
+(ps::PointSpace)() = 0.0
+LinearAlgebra.cross(::PointSpace, ::PointSpace) = PointSpace()
+LinearAlgebra.cross(m::AbstractManifold, ::PointSpace) = m
+LinearAlgebra.cross(::PointSpace, m::AbstractManifold) = m
+
+offsetframe(::PointSpace) =
+    SVector{0, Float64}(), Matrix{Float64}(undef, 0, 0)
 
 # Curves ================================================================================= #
 struct ParametricCurve{F} <: AbstractManifold{1}
@@ -85,8 +118,8 @@ function (::Sphere{D})(varargs::Vararg{T, D}) where {D, T}
             prod(sinpi.(args[1:end])))
 end
 
-Base.rand(rng::AbstractRNG, ::Sphere{D}, n::Integer) where D =
-    normalize.([SVector{D + 1, Float64}(randn(rng, D + 1)) for _ in 1:n])
+Base.rand(rng::AbstractRNG, ::Sphere{D}) where D =
+    normalize(SVector{D + 1, Float64}(randn(rng, D + 1)))
 
 """
     Ball{D}
@@ -106,11 +139,9 @@ function (::Ball{D})(varargs::Vararg{T, D}) where {D, T}
 end
 
 function Base.rand(rng::AbstractRNG, ::Ball{D}, n::Integer) where D
-    res = SVector{D, Float64}[]
-    while n ≠ 0
-        new = filter!(p -> norm(p) ≤ 1, [SVector{D, Float64}(2rand(rng, D) .- 1) for _ in 1:n])
-        n = n - length(new)
-        append!(res, new)
+    res = @SVector ones(D)
+    while norm(res) > 1
+        res = SVector{D, Float64}(2rand(rng, D) .- 1)
     end
     res
 end

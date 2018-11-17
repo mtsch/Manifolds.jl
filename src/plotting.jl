@@ -1,3 +1,4 @@
+#=
 # Curve
 @recipe function f(curve::Manifold{1, C}, from = 0, to = 1;
                    npoints=1000, projection = eye(3)) where C
@@ -75,3 +76,5 @@ end
     markersize --> 0.5
     pts[1, :], pts[2, :], pts[3, :]
 end
+
+=#

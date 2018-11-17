@@ -6,11 +6,6 @@
 # ScaledManifold
 # ReparameterizedManifold
 
-using Random
-using LinearAlgebra
-using StaticArrays
-using ForwardDiff: Dual, partials, value
-
 # = Abstract & helpers = #
 struct CurveProduct{D, T<:NTuple{D, Curve}} <: AbstractManifold{D}
     spaces ::T
@@ -18,8 +13,8 @@ end
 Base.show(io::IO, cp::CurveProduct{D}) where D =
     print(io, join(string.(cp.spaces), " × "))
 
-CurveProduct(spaces::T) where {T<:NTuple{D, Curve}} where D =
-    CurveProduct{D, T}(spaces)
+#CurveProduct(spaces::T) where {T<:NTuple{D, Curve}} where D =
+#    CurveProduct{D, T}(spaces)
 
 function offsetframe(ps::CurveProduct{D}, args::NTuple{D, T}) where {D, T}
     spaces = ps.spaces

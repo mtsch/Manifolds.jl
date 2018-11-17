@@ -1,8 +1,3 @@
-using Random
-using LinearAlgebra
-using ForwardDiff: Dual, value, partials
-using StaticArrays
-
 # Abstract, helpers ====================================================================== #
 abstract type AbstractManifold{D} end
 
@@ -21,6 +16,13 @@ Return a matrix that makes vectors perpendicular to `man(args...)` and the value
 """
 offsetframe
 
+"""
+    hasoffsetframe(::AbstractManifold)
+
+Trait that tells whether `offsetframe` is defined for a type of manifold.
+"""
+hasoffsetframe(::AbstractManifold) = false
+
 function idpad(M::AbstractMatrix{T}, d) where T
     n, m = size(M)
     @boundscheck d ≥ n && d ≥ m ||
@@ -32,6 +34,7 @@ function idpad(M::AbstractMatrix{T}, d) where T
     end
     res
 end
+
 """
     chopzeros(arr::Vector{SVector})
 
@@ -59,6 +62,8 @@ LinearAlgebra.cross(::PointSpace, ::PointSpace) = PointSpace()
 LinearAlgebra.cross(m::AbstractManifold, ::PointSpace) = m
 LinearAlgebra.cross(::PointSpace, m::AbstractManifold) = m
 
+hasoffsetframe(::PointSpace) =
+    true
 offsetframe(::PointSpace) =
     SVector{0, Float64}(), Matrix{Float64}(undef, 0, 0)
 
@@ -77,6 +82,8 @@ end
 
 const Curve = AbstractManifold{1}
 
+hasoffsetframe(::Curve) =
+    true
 function offsetframe(c::Curve, t::T) where T
     val = c(Dual{:d1}(Dual{:d2}(t, one(T)), one(T)))
     if length(val) < 3

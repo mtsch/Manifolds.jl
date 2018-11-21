@@ -29,7 +29,7 @@ function offsetframe(c::AbstractManifold{1, C}, t::T) where {C, T}
     normal  = partials.(partials.(val, 1), 1)
     if iszero(normal × tangent)
         normal = !iszero(tangent × @SVector[0, 0, 1]) ?
-            tangent × @SVector[0, 0, 1] : tangent × @SVector[0, 1, 0]
+            tangent × @SVector[0, 0, -1] : tangent × @SVector[0, -1, 0]
     end
     binormal = normalize(tangent × normal)
     normal   = normalize(binormal × tangent)
@@ -37,20 +37,19 @@ function offsetframe(c::AbstractManifold{1, C}, t::T) where {C, T}
     offset[1:1+C], [normal binormal]
 end
 
-
 """
     u +ₚ v
 
 Promote vectors `u` and `v` to common size and add them.
 """
-+ₚ(u::SVector{N1, T1}, v::SVector{N2, T2}) where {N1, T1, N2, T2} =
-    vcat(u, @SVector zeros(T1, max(N1, N2) - N1)) +
-    vcat(v, @SVector zeros(T2, max(N1, N2) - N2))
++ₚ(u::SVector{N, T}, v::SVector{M, U}) where {N, T, M, U} =
+    vcat(u, @SVector zeros(T, max(N, M) - N)) +
+    vcat(v, @SVector zeros(U, max(N, M) - M))
 
-function +ₚ(u::AbstractVector, v::AbstractVector)
+function +ₚ(u::AbstractVector{T}, v::AbstractVector{U}) where {T, U}
     n = length(u)
     m = length(v)
-    vcat(u, zeros(T1, max(n, m) - n)) + vcat(v, zeros(T2, max(n, m) - m))
+    vcat(u, zeros(T, max(n, m) - n)) + vcat(v, zeros(U, max(n, m) - m))
 end
 
 """
@@ -95,47 +94,8 @@ function *ₚ(A::AbstractMatrix{T}, B::AbstractMatrix{U}) where {T, U}
         A * B
     end
 end
-# = Abstract & helpers = #
-#=
-struct CurveProduct{D, T<:NTuple{D, Curve}} <: AbstractManifold{D}
-    spaces ::T
-end
-Base.show(io::IO, cp::CurveProduct{D}) where D =
-    print(io, join(string.(cp.spaces), " × "))
 
-#CurveProduct(spaces::T) where {T<:NTuple{D, Curve}} where D =
-#    CurveProduct{D, T}(spaces)
-
-function offsetframe(ps::CurveProduct{D}, args::NTuple{D, T}) where {D, T}
-    spaces = ps.spaces
-
-    offset = zeros(T, D+3)
-    frame  = Matrix{T}(I, (D+3, D+3))
-
-    for i in 1:D
-        space = spaces[i]
-        scale = scaling(space)
-        val, mat = offsetframe(space, args[i])
-        offset += frame * vcat(val, zeros(T, D)) *
-            (i > 1 ? scale(args[i-1]) : scale(zero(T)))
-        frame *= idpad(mat, D+3)
-    end
-    offset, frame
-end
-
-(ps::CurveProduct{D})(args::Vararg{T, D}) where {D, T} = first(offsetframe(ps, args))
-
-# All variants of constructing `CurveProduct`s.
-LinearAlgebra.cross(c1::Curve, c2::Curve) =
-    CurveProduct((c1, c2))
-LinearAlgebra.cross(ps::CurveProduct{D}, c::Curve) where D =
-    CurveProduct((ps.spaces..., c))
-LinearAlgebra.cross(c::Curve, ps::CurveProduct{D}) where D =
-    CurveProduct((c, ps.spaces))
-LinearAlgebra.cross(p1::CurveProduct, p2::CurveProduct{D}) where D =
-    CurveProduct((p1.spaces..., p2.spaces...))
-=#
-
+# Product ================================================================================ #
 struct ProductSpace{D, C, T<:NTuple{2, AbstractManifold}} <: AbstractManifold{D, C}
     spaces::T
 end
@@ -153,15 +113,11 @@ end
 function offsetframe(ps::ProductSpace{D, C}, args::Vararg{T, D}) where {D, C, T}
     m1, m2 = ps.spaces
 
-    val, mat = offsetframe(m1, args[1:dim(m1)]...)
-    offset1 = vcat(val, zeros(T, D+C - length(val)))
-    frame1  = idpad(mat, D+C)
+    val1, mat1 = offsetframe(m1, args[1:dim(m1)]...)
+    val2, mat2 = offsetframe(m2, args[dim(m1) .+ (1:dim(m2))]...)
+    val2 *= scaling(m2)(args[dim(m1)]...)
 
-    val, mat = offsetframe(m2, args[dim(m1).+(1:dim(m2))]...)
-    offset2 = vcat(val, zeros(T, D+C - length(val)))
-    frame2  = idpad(mat, D+C)
-
-    offset1 + frame1 * offset2, frame1 * frame2
+    (val1 +ₚ mat1 *ₚ val2)[1:D+C], mat1 *ₚ mat2
 end
 
 (ps::ProductSpace{D})(args::Vararg{T, D}) where {T, D} = offsetframe(ps, args...)[1]

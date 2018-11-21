@@ -32,7 +32,7 @@ Base.show(io::IO, sm::ScaledManifold) =
 scaling(::AbstractManifold) = one
 scaling(mm::ModifiedManifold) = scaling(mm.base)
 scaling(sm::ScaledManifold) = sm.scaling
-scaling(sm::ScaledManifold{<:Any, <:Number}) = one
+scaling(sm::ScaledManifold{<:Any, <:Any, <:Number}) = one
 
 scaled(man::AbstractManifold{D, C}, f) where {D, C} =
     ScaledManifold{D, C, typeof(f), typeof(man)}(man, f)

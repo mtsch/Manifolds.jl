@@ -23,6 +23,8 @@ function ≃(m1::AbstractManifold{D}, m2::AbstractManifold{D}, n=1000) where D
     end
 end
 
+⟂(v1::AbstractVector, v2::AbstractVector) = iszero(v1 ⋅ v2)
+
 include("base.jl")
 #include("modifiers.jl")
 #include("products.jl")

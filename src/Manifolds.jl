@@ -21,7 +21,7 @@ export
     # Types
     AbstractManifold,
     # Primitives
-    PointSpace, ParametricCurve, Sphere, Ball,
+    PointSpace, ParametricCurve, Sphere, Ball, Cube,
     # Modifiers
     ModifiedManifold, ReparametrizedManifold, ScaledManifold, TranslatedManifold,
     reparametrized, scaled, translated,

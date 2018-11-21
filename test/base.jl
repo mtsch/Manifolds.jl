@@ -22,8 +22,7 @@
     end
 
     @testset "PointSpace" begin
-        @test @capture_out(print(PointSpace())) == "{⋆}"
-        @test @capture_err(print(stderr, PointSpace())) == "{⋆}"
+        @test @capture_out(print(PointSpace())) == @capture_err(print(stderr, PointSpace()))
 
         @test iszero(PointSpace()())
         @test iszero(rand(PointSpace()))
@@ -38,8 +37,7 @@
         circfun(x) = (cospi(2x), sinpi(2x))
         circ = ParametricCurve(circfun)
 
-        @test @capture_out(print(circ)) == "ParametricCurve($circfun)"
-        @test @capture_err(print(stderr, circ)) == "ParametricCurve($circfun)"
+        @test @capture_out(print(circ)) == @capture_err(print(stderr, circ))
 
         @test norm(circ(rand())) ≈ 1
         @test norm(rand(circ)) ≈ 1
@@ -57,8 +55,7 @@
     @testset "Sphere" begin
         for n in 1:5
             sphere = Sphere(n)
-            @test @capture_out(print(sphere)) == "S^$n"
-            @test @capture_err(print(stderr, sphere)) == "S^$n"
+            @test @capture_out(print(sphere)) == @capture_err(print(stderr, sphere))
 
             @test norm(sphere(rand(n)...)) ≈ 1
             @test norm(rand(sphere)) ≈ 1
@@ -75,8 +72,7 @@
     @testset "Ball" begin
         for n in 1:5
             ball = Ball(n)
-            @test @capture_out(print(ball)) == "B^$n"
-            @test @capture_err(print(stderr, ball)) == "B^$n"
+            @test @capture_out(print(ball)) == @capture_err(print(stderr, ball))
 
             @test norm(ball(rand(n)...)) ≤ 1
             @test norm(rand(ball)) ≤ 1
@@ -86,6 +82,23 @@
                 @test Manifolds.hasoffsetframe(ball)
             else
                 @test !Manifolds.hasoffsetframe(ball)
+            end
+        end
+    end
+
+    @testset "Cube" begin
+        for n in 1:5
+            cube = Cube(n)
+            @test @capture_out(print(cube)) == @capture_err(print(stderr, cube))
+
+            @test sum(cube(rand(n)...)) .≤ n
+            @test sum(rand(cube)) ≤ n
+            @test all(sum.(rand(cube, 100)) .≤ n)
+
+            if n == 1
+                @test Manifolds.hasoffsetframe(cube)
+            else
+                @test !Manifolds.hasoffsetframe(cube)
             end
         end
     end

@@ -8,7 +8,7 @@ Return a matrix that makes vectors perpendicular to `man(args...)` when multipli
 Should return a `SVector{D+C}` and a matrix.
 """
 offsetframe(man::AbstractManifold{D, C}, t::Vararg{T, D}) where {D, C, T} =
-    man(t...), vcat(zeros(T, C, 1), one(T))
+    man(t...), vcat(zeros(T, D+C, 1), one(T))
 
 function offsetframe(c::AbstractManifold{1, C}, t::T) where {C, T}
     # This only works for codimension up to 2.
@@ -36,6 +36,9 @@ function offsetframe(c::AbstractManifold{1, C}, t::T) where {C, T}
 
     offset[1:1+C], [normal binormal]
 end
+
+dimincrease(::AbstractManifold{D, C}) where {D, C} = D+C
+dimincrease(::AbstractManifold{1, C}) where C = C ≤ 2 ? 1 : 1+C
 
 """
     u +ₚ v
@@ -102,10 +105,14 @@ end
 Base.show(io::IO, ps::ProductSpace) =
     print(io, "(", ps.spaces[1], " × ", ps.spaces[2], ")")
 
+# D, C calculation is wrong.
+# TODO: add a trait dimensionincrease??
 function LinearAlgebra.cross(m1::AbstractManifold{D1, C1},
                              m2::AbstractManifold{D2, C2}) where {D1,D2,C1,C2}
     D = D1 + D2
-    C = max(D1 + C1, D1 + D2 + C2) - D
+    #C = max(D1 + C1, D1 + D2 + C2) - D
+    C = dimincrease(m1) - D1 + C2
+
     spaces = (m1, m2)
     ProductSpace{D, C, typeof(spaces)}((m1, m2))
 end

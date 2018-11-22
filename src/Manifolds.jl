@@ -23,8 +23,7 @@ export
     # Primitives
     PointSpace, ParametricCurve, Sphere, Ball, Cube,
     # Modifiers
-    ModifiedManifold, ReparametrizedManifold, ScaledManifold, TranslatedManifold,
-    reparametrized, scaled, translated,
+    reparametrized, scaled, translated, flattened,
     # Helpers
     chopzeros
 end

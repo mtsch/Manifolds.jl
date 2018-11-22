@@ -19,8 +19,8 @@ reparametrized(man::AbstractManifold, t::Number) =
 reparametrized(::PointSpace, _) =
     PointSpace()
 
-# scaling ================================================================================== #
-# TODO? const scaling?
+# scaling ================================================================================ #
+# TODO? split out const scaling?
 struct ScaledManifold{D, C, F, M<:AbstractManifold{D, C}} <: ModifiedManifold{D, C}
     base    ::M
     scaling ::F
@@ -74,3 +74,24 @@ Base.:+(r, man::AbstractManifold{D}) where D = r + man
     promotedadd(tm.base(args...), tm.translation)
 Base.rand(rng::AbstractRNG, tm::TranslatedManifold) =
     promotedadd(rand(rng, tm.base), tm.translation)
+
+# flattened ============================================================================== #
+struct FlattenedManifold{D, C, M<:AbstractManifold{D, C}} <: AbstractManifold{D, C}
+    base ::M
+end
+
+"""
+    flattened(man)
+
+Use to make a product flat, e.g. while `Sphere(1) × Sphere(1)` forms a torus embedded in ℝ³,
+`flattened(Sphere(1)) × Sphere(1)` forms a flat torus, embedded in ℝ⁴.
+"""
+flattened(man::AbstractManifold{D, C}) where {D, C} =
+    FlattenedManifold{D, C, typeof(man)}(man)
+
+offsetframe(fm::FlattenedManifold{D, C}, args::Vararg{T, D}) where {D, C, T} =
+    fm.base(args...), vcat(zeros(T, D+C, 1), one(T))
+dimincrease(::FlattenedManifold{D, C}) where {D, C} = D+C
+
+(fm::FlattenedManifold{D})(args::Vararg{T, D}) where {D, T} =
+    fm.base(args...)

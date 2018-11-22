@@ -22,7 +22,7 @@ Base.rand(rng::AbstractRNG, man::AbstractManifold{D}, n::Integer) where D =
 """
     PointSpace()
 
-Unit for `×`.
+Single point, unit for `×`.
 """
 struct PointSpace <: AbstractManifold{0, 1} end
 Base.show(io::IO, ::PointSpace) = print(io, "{⋆}")
@@ -32,7 +32,7 @@ LinearAlgebra.cross(::PointSpace, ::PointSpace) = PointSpace()
 LinearAlgebra.cross(m::AbstractManifold, ::PointSpace) = m
 LinearAlgebra.cross(::PointSpace, m::AbstractManifold) = m
 
-# Spheres, Balls, ... ==================================================================== #
+# Spheres ================================================================================ #
 """
     Sphere{D}
 
@@ -53,6 +53,7 @@ end
 Base.rand(rng::AbstractRNG, ::Sphere{D}) where D =
     normalize(SVector{D + 1, Float64}(randn(rng, D + 1)))
 
+# Ball =================================================================================== #
 """
     Ball{D}
 
@@ -78,6 +79,7 @@ function Base.rand(rng::AbstractRNG, ::Ball{D}) where D
     res
 end
 
+# Cube =================================================================================== #
 """
     Cube{D}
 
@@ -90,3 +92,11 @@ Cube(D) = Cube{D}()
 Base.show(io::IO, ::Cube{D}) where D = print(io, "𝕀", D ≠ 1 ? "^$D" : "")
 
 (::Cube{D})(args::Vararg{T, D}) where {D, T} = SVector(args)
+
+# ParametricManifold ===================================================================== #
+struct ParametricManifold{D, C, F} <: AbstractManifold{D, C}
+    fun::F
+end
+
+(pm::ParametricManifold{D, C})(args::Vararg{D, T}) where T =
+    SVector{D+C, T}(pm.fun(args...))

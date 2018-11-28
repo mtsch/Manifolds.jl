@@ -9,6 +9,8 @@ Should return a `SVector{D+C}` and a matrix.
 """
 offsetframe(man::AbstractManifold{D, C}, t::Vararg{T, D}) where {D, C, T} =
     man(t...), vcat(zeros(T, D+C, 1), one(T))
+offsetframe(man::AbstractManifold{0}) =
+    man(), zeros(0, 0)
 
 function offsetframe(c::AbstractManifold{1, C}, t::T) where {C, T}
     # This only works for codimension up to 2.
@@ -37,6 +39,7 @@ function offsetframe(c::AbstractManifold{1, C}, t::T) where {C, T}
     offset[1:1+C], [normal binormal]
 end
 
+dimincrease(::AbstractManifold{0}) = 0
 dimincrease(::AbstractManifold{D, C}) where {D, C} = D+C
 dimincrease(::AbstractManifold{1, C}) where C = C ≤ 2 ? 1 : 1+C
 

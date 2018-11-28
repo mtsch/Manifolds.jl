@@ -1,4 +1,5 @@
 using Manifolds
+using Manifolds: +ₚ, *ₚ, offsetframe, dimincrease, dim, codim
 using Test
 
 using LinearAlgebra
@@ -7,7 +8,7 @@ using StaticArrays
 using Suppressor
 
 # Randomized equality checking.
-function ≃(m1::AbstractManifold{D}, m2::AbstractManifold{D}, n=1000) where D
+function ≅(m1::AbstractManifold{D}, m2::AbstractManifold{D}, n=1000) where D
     params = rand(D, n)
     vals1 = mapslices(x -> m1(x...), params, dims = 1)
     vals2 = mapslices(x -> m2(x...), params, dims = 1)
@@ -22,9 +23,13 @@ function ≃(m1::AbstractManifold{D}, m2::AbstractManifold{D}, n=1000) where D
         false
     end
 end
+function ≅(m1::AbstractManifold, m2::AbstractManifold, n=1000)
+    println("Mismatched dimensions.")
+    false
+end
 
 ⟂(v1::AbstractVector, v2::AbstractVector) = iszero(v1 ⋅ v2)
 
 include("base.jl")
-#include("modifiers.jl")
+include("modifiers.jl")
 #include("products.jl")

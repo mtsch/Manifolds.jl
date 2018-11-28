@@ -21,9 +21,8 @@ export
     # Types
     AbstractManifold,
     # Primitives
-    PointSpace, ParametricCurve, Sphere, Ball, Cube,
+    PointSpace, Sphere, Ball, Cube, ParametricManifold,
     # Modifiers
     reparametrized, scaled, translated, flattened,
-    # Helpers
-    chopzeros
+    ×
 end

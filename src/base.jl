@@ -72,8 +72,6 @@ function (::Ball{D})(varargs::Vararg{T, D}) where {D, T}
                 prod(sinpi.(args[2:end])))
 end
 
-# ?????
-#=
 function Base.rand(rng::AbstractRNG, ::Ball{D}) where D
     res = @SVector fill(2.0, D)
     while norm(res) > 1
@@ -81,7 +79,6 @@ function Base.rand(rng::AbstractRNG, ::Ball{D}) where D
     end
     res
 end
-=#
 
 # Cube =================================================================================== #
 """
@@ -94,7 +91,6 @@ end
 
 Cube(D) = Cube{D}()
 Base.show(io::IO, ::Cube{D}) where D = print(io, "𝕀", D ≠ 1 ? "^$D" : "")
-
 (::Cube{D})(args::Vararg{T, D}) where {D, T} = SVector(args)
 
 # ParametricManifold ===================================================================== #
@@ -102,5 +98,9 @@ struct ParametricManifold{D, C, F} <: AbstractManifold{D, C}
     fun::F
 end
 
-(pm::ParametricManifold{D, C})(args::Vararg{D, T}) where {D, C, T} =
+ParametricManifold{D, C}(f::F) where {D, C, F} =
+    ParametricManifold{D, C, F}(f)
+Base.show(io::IO, pm::ParametricManifold{D, C}) where {D, C} =
+    print(io, "ParametricManifold{$D, $C}($(pm.fun))")
+(pm::ParametricManifold{D, C})(args::Vararg{T, D}) where {D, C, T} =
     SVector{D+C, T}(pm.fun(args...))

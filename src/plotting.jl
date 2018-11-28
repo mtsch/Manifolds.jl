@@ -34,7 +34,6 @@ end
     xs, ys, zs
 end
 
-# 3d points.
 @userplot Points3d
 @recipe function f(p::Points3d)
     if length(p.args) != 1 || !(typeof(first(p.args)) <: AbstractVector{<:AbstractVector})

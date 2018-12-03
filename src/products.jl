@@ -119,6 +119,9 @@ function LinearAlgebra.cross(m1::AbstractManifold{D1, C1},
     spaces = (m1, m2)
     ProductSpace{D, C, typeof(spaces)}((m1, m2))
 end
+LinearAlgebra.cross(::PointSpace, ::PointSpace) = PointSpace()
+LinearAlgebra.cross(m::AbstractManifold, ::PointSpace) = m
+LinearAlgebra.cross(::PointSpace, m::AbstractManifold) = m
 
 function offsetframe(ps::ProductSpace{D, C}, args::Vararg{T, D}) where {D, C, T}
     m1, m2 = ps.spaces
@@ -127,7 +130,7 @@ function offsetframe(ps::ProductSpace{D, C}, args::Vararg{T, D}) where {D, C, T}
     val2, mat2 = offsetframe(m2, args[dim(m1) .+ (1:dim(m2))]...)
     val2 *= scaling(m2)(args[dim(m1)]...)
 
-    (val1 +ₚ mat1 *ₚ val2)[1:D+C], mat1 *ₚ mat2
+    SVector{D+C, T}((val1 +ₚ mat1 *ₚ val2)[1:D+C]), mat1 *ₚ mat2
 end
 
 (ps::ProductSpace{D})(args::Vararg{T, D}) where {T, D} = offsetframe(ps, args...)[1]

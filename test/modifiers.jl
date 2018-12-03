@@ -38,6 +38,7 @@
         @test 2interval == si
         r = rand()
         @test offsetframe(si, r) == offsetframe(interval, 2r)
+        @test scaled(interval, 2) == 2interval == interval * 2
 
         # Radius of sphere should match scaling.
         for i in 1:5

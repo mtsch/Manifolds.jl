@@ -24,13 +24,11 @@ Base.rand(rng::AbstractRNG, man::AbstractManifold{D}, n::Integer) where D =
 
 Single point, unit for `×`.
 """
-struct PointSpace <: AbstractManifold{0, 1} end
-Base.show(io::IO, ::PointSpace) = print(io, "{⋆}")
+struct PointSpace <: AbstractManifold{0, 1}
+end
 
+Base.show(io::IO, ::PointSpace) = print(io, "{⋆}")
 (ps::PointSpace)() = SVector(0.0)
-LinearAlgebra.cross(::PointSpace, ::PointSpace) = PointSpace()
-LinearAlgebra.cross(m::AbstractManifold, ::PointSpace) = m
-LinearAlgebra.cross(::PointSpace, m::AbstractManifold) = m
 
 # Spheres ================================================================================ #
 """

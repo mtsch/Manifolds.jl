@@ -16,8 +16,6 @@ reparametrized(man::AbstractManifold{D, C}, f) where {D, C} =
     ReparametrizedManifold{D, C, typeof(f), typeof(man)}(man, f)
 reparametrized(man::AbstractManifold, t::Number) =
     reparametrized(man, x->x.*t)
-reparametrized(::PointSpace, _) =
-    PointSpace()
 
 # scaling ================================================================================ #
 # TODO? split out const scaling?
@@ -36,8 +34,6 @@ scaling(sm::ScaledManifold{<:Any, <:Any, <:Number}) = one
 
 scaled(man::AbstractManifold{D, C}, f) where {D, C} =
     ScaledManifold{D, C, typeof(f), typeof(man)}(man, f)
-scaled(::PointSpace, _) =
-    PointSpace()
 Base.:*(r::Number, man::AbstractManifold) =
     scaled(man, r)
 Base.:*(man::AbstractManifold, r::Number) =
@@ -91,7 +87,8 @@ flattened(man::AbstractManifold{D, C}) where {D, C} =
 
 offsetframe(fm::FlattenedManifold{D, C}, args::Vararg{T, D}) where {D, C, T} =
     fm.base(args...), vcat(zeros(T, D+C, 1), one(T))
-dimincrease(::FlattenedManifold{D, C}) where {D, C} = D+C
+dimincrease(::FlattenedManifold{D, C}) where {D, C} =
+    D + C
 
 (fm::FlattenedManifold{D})(args::Vararg{T, D}) where {D, T} =
     fm.base(args...)

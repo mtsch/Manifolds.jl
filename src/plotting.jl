@@ -37,7 +37,7 @@ end
 @userplot Points3d
 @recipe function f(p::Points3d)
     if length(p.args) != 1 || !(typeof(first(p.args)) <: AbstractVector{<:AbstractVector})
-        error("points3d is expecting a single matrix argument. " *
+        error("points3d is expecting a vector of vectors. " *
               "Got: $(typeof(p.args))")
     end
     pts = first(p.args)

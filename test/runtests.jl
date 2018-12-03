@@ -7,11 +7,11 @@ using Random
 using StaticArrays
 using Suppressor
 
-# Randomized equality checking.
+# Randomized equality checking. Also tests call and rand.
 function ≅(m1::AbstractManifold{D}, m2::AbstractManifold{D}, n=1000) where D
     params = rand(D, n)
-    vals1 = mapslices(x -> m1(x...), params, dims = 1)
-    vals2 = mapslices(x -> m2(x...), params, dims = 1)
+    vals1 = hcat(m1(zeros(D)...), mapslices(x -> m1(x...), params, dims = 1))
+    vals2 = hcat(m2(zeros(D)...), mapslices(x -> m2(x...), params, dims = 1))
     if vals1 ≈ vals2
         true
     else
